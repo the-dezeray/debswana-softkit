@@ -15,8 +15,8 @@ jobs:
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
-          java-version: '17'
-          distribution: 'temurin'
+          java-version: "17"
+          distribution: "temurin"
 
       - name: Build fat JAR
         run: mvn package -DskipTests -q
@@ -69,6 +69,52 @@ jobs:
       - name: Upload EXE artifact
         uses: actions/upload-artifact@v4
         with:
-          name: DebswanaSoftwareKit
+          name: DebswanaSoftwareKit-launch4j
           path: DebswanaSoftwareKit.exe
+          retention-days: 30
+
+  build-jpackage:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: "17"
+          distribution: "temurin"
+
+      - name: Build fat JAR
+        run: mvn package -DskipTests -q
+
+      - name: Install ImageMagick
+        run: choco install imagemagick -y --no-progress
+
+      - name: Convert PNG to ICO
+        run: |
+          magick src/main/resources/assets/debswana-mini-logo.png `
+            -define icon:auto-resize="256,128,64,48,32,16" `
+            debswana.ico
+
+      - name: Package with jpackage (portable app-image)
+        run: |
+          jpackage `
+            --type app-image `
+            --input target `
+            --main-jar DebswanaSoftwareKit-fat.jar `
+            --main-class com.example.App `
+            --name DebswanaSoftwareKit `
+            --app-version 1.0.0 `
+            --icon debswana.ico `
+            --dest dist
+
+      - name: Zip portable app
+        run: Compress-Archive -Path dist\DebswanaSoftwareKit -DestinationPath DebswanaSoftwareKit-portable.zip
+
+      - name: Upload portable artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: DebswanaSoftwareKit-portable
+          path: DebswanaSoftwareKit-portable.zip
           retention-days: 30
