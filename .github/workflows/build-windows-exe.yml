@@ -19,10 +19,10 @@ jobs:
           distribution: 'graalvm'
           native-image-job-reports: 'true'
 
-      - name: Install ImageMagick (for PNG → ICO)
+      - name: Install ImageMagick
         run: choco install imagemagick -y --no-progress
 
-      - name: Convert icon PNG to ICO
+      - name: Convert PNG to ICO
         run: |
           magick src/main/resources/assets/debswana-mini-logo.png `
             -define icon:auto-resize="256,128,64,48,32,16" `
@@ -38,9 +38,13 @@ jobs:
             -H:Name=DebswanaSoftwareKit `
             -H:Class=com.example.App `
             -H:ConfigurationFileDirectories=src/main/resources/META-INF/native-image `
-            -H:ICOPath=debswana.ico `
             --no-fallback `
             -H:+ReportExceptionStackTraces
+
+      - name: Embed icon into EXE via rcedit
+        run: |
+          choco install rcedit -y --no-progress
+          rcedit DebswanaSoftwareKit.exe --set-icon debswana.ico
 
       - name: Upload EXE artifact
         uses: actions/upload-artifact@v4
