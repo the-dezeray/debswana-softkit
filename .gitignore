@@ -1,0 +1,10 @@
+target/
+dist/
+dependency-reduced-pom.xml
+*.class
+Debswana-Automation-Tool-feature-stable/
+
+*.class
+*.jar
+.idea/
+.vscode/

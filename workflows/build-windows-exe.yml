@@ -1,0 +1,49 @@
+name: Build Windows EXE
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Install WiX Toolset
+        run: choco install wixtoolset -y --no-progress
+
+      - name: Build fat jar
+        run: mvn package -DskipTests -q
+
+      - name: Package EXE with jpackage
+        run: |
+          jpackage `
+            --type exe `
+            --name "DebswanaSoftwareKit" `
+            --app-version "1.0.0" `
+            --vendor "Debswana IT" `
+            --description "Debswana Software Kit" `
+            --input target `
+            --main-jar DebswanaSoftwareKit-fat.jar `
+            --main-class com.example.App `
+            --dest dist `
+            --win-dir-chooser `
+            --win-shortcut `
+            --win-menu `
+            --win-menu-group "Debswana"
+
+      - name: Upload EXE artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: DebswanaSoftwareKit-installer
+          path: dist/*.exe
+          retention-days: 30
