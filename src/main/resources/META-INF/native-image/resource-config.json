@@ -1,0 +1,9 @@
+{
+  "resources": {
+    "includes": [
+      {"pattern": "assets/.*\\.png"},
+      {"pattern": "assets/.*\\.gif"},
+      {"pattern": "image\\.png"}
+    ]
+  }
+}

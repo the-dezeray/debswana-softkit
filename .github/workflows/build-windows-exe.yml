@@ -12,38 +12,39 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
+      - name: Set up GraalVM JDK 21
+        uses: graalvm/setup-graalvm@v1
         with:
-          java-version: '17'
-          distribution: 'temurin'
+          java-version: '21'
+          distribution: 'graalvm'
+          native-image-job-reports: 'true'
 
-      - name: Install WiX Toolset
-        run: choco install wixtoolset -y --no-progress
+      - name: Install ImageMagick (for PNG → ICO)
+        run: choco install imagemagick -y --no-progress
 
-      - name: Build fat jar
+      - name: Convert icon PNG to ICO
+        run: |
+          magick src/main/resources/assets/debswana-mini-logo.png `
+            -define icon:auto-resize="256,128,64,48,32,16" `
+            debswana.ico
+
+      - name: Build fat JAR
         run: mvn package -DskipTests -q
 
-      - name: Package EXE with jpackage
+      - name: Build native EXE
         run: |
-          jpackage `
-            --type exe `
-            --name "DebswanaSoftwareKit" `
-            --app-version "1.0.0" `
-            --vendor "Debswana IT" `
-            --description "Debswana Software Kit" `
-            --input target `
-            --main-jar DebswanaSoftwareKit-fat.jar `
-            --main-class com.example.App `
-            --dest dist `
-            --win-dir-chooser `
-            --win-shortcut `
-            --win-menu `
-            --win-menu-group "Debswana"
+          native-image `
+            -jar target/DebswanaSoftwareKit-fat.jar `
+            -H:Name=DebswanaSoftwareKit `
+            -H:Class=com.example.App `
+            -H:ConfigurationFileDirectories=src/main/resources/META-INF/native-image `
+            -H:ICOPath=debswana.ico `
+            --no-fallback `
+            -H:+ReportExceptionStackTraces
 
       - name: Upload EXE artifact
         uses: actions/upload-artifact@v4
         with:
-          name: DebswanaSoftwareKit-installer
-          path: dist/*.exe
+          name: DebswanaSoftwareKit
+          path: DebswanaSoftwareKit.exe
           retention-days: 30
