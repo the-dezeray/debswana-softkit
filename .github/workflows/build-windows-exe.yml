@@ -12,12 +12,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up GraalVM JDK 21
-        uses: graalvm/setup-graalvm@v1
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
         with:
-          java-version: '21'
-          distribution: 'graalvm'
-          native-image-job-reports: 'true'
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Build fat JAR
+        run: mvn package -DskipTests -q
 
       - name: Install ImageMagick
         run: choco install imagemagick -y --no-progress
@@ -28,23 +30,41 @@ jobs:
             -define icon:auto-resize="256,128,64,48,32,16" `
             debswana.ico
 
-      - name: Build fat JAR
-        run: mvn package -DskipTests -q
-
-      - name: Build native EXE
+      - name: Download Launch4j
         run: |
-          native-image `
-            -jar target/DebswanaSoftwareKit-fat.jar `
-            -H:Name=DebswanaSoftwareKit `
-            -H:Class=com.example.App `
-            -H:ConfigurationFileDirectories=src/main/resources/META-INF/native-image `
-            --no-fallback `
-            -H:+ReportExceptionStackTraces
+          Invoke-WebRequest -Uri "https://sourceforge.net/projects/launch4j/files/launch4j-3/3.14/launch4j-3.14-win32.zip/download" `
+            -OutFile launch4j.zip
+          Expand-Archive launch4j.zip -DestinationPath .
 
-      - name: Embed icon into EXE via rcedit
+      - name: Create Launch4j config
         run: |
-          choco install rcedit -y --no-progress
-          rcedit DebswanaSoftwareKit.exe --set-icon debswana.ico
+          @"
+          <launch4jConfig>
+            <dontWrapJar>false</dontWrapJar>
+            <headerType>gui</headerType>
+            <jar>target/DebswanaSoftwareKit-fat.jar</jar>
+            <outfile>DebswanaSoftwareKit.exe</outfile>
+            <icon>debswana.ico</icon>
+            <jre>
+              <minVersion>17</minVersion>
+              <downloadUrl>https://adoptium.net</downloadUrl>
+            </jre>
+            <versionInfo>
+              <fileVersion>1.0.0.0</fileVersion>
+              <txtFileVersion>1.0.0</txtFileVersion>
+              <fileDescription>Debswana Software Kit</fileDescription>
+              <copyright>Debswana IT</copyright>
+              <productVersion>1.0.0.0</productVersion>
+              <txtProductVersion>1.0.0</txtProductVersion>
+              <productName>DebswanaSoftwareKit</productName>
+              <internalName>DebswanaSoftwareKit</internalName>
+              <originalFilename>DebswanaSoftwareKit.exe</originalFilename>
+            </versionInfo>
+          </launch4jConfig>
+          "@ | Out-File -FilePath launch4j-config.xml -Encoding UTF8
+
+      - name: Build EXE with Launch4j
+        run: launch4j\launch4j launch4j-config.xml
 
       - name: Upload EXE artifact
         uses: actions/upload-artifact@v4

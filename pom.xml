@@ -88,20 +88,6 @@
           </execution>
         </executions>
       </plugin>
-      <plugin>
-        <groupId>org.graalvm.buildtools</groupId>
-        <artifactId>native-maven-plugin</artifactId>
-        <version>0.10.3</version>
-        <configuration>
-          <imageName>DebswanaSoftwareKit</imageName>
-          <mainClass>com.example.App</mainClass>
-          <buildArgs>
-            <buildArg>--no-fallback</buildArg>
-            <buildArg>-H:ConfigurationFileDirectories=src/main/resources/META-INF/native-image</buildArg>
-            <buildArg>-H:+ReportExceptionStackTraces</buildArg>
-          </buildArgs>
-        </configuration>
-      </plugin>
     </plugins>
   </build>
 </project>
